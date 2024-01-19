@@ -1,50 +1,53 @@
 const Cart = require('../src/Cart');
+const InMemoryStorage = require('../src/InMemoryStorage');
 const Product = require('../src/Product');
 
 describe('Cart', () => {
-  test('should add products to the cart', () => {
-    const cart = new Cart();
-    const product = new Product('apple', 10.5);
+  test('should add product to cart', () => {
+    const storage = new InMemoryStorage();
+    const cart = new Cart(storage);
 
-    cart.buy(product, 3);
+    const apple = new Product('apple', 10.5);
+    cart.buy(apple, 3);
 
-    expect(cart.items).toHaveLength(1);
-    expect(cart.items[0].product).toEqual(product);
-    expect(cart.items[0].quantity).toEqual(3);
+    expect(storage.getStorage()).toHaveProperty(apple.getName());
+    expect(storage.getStorage()[apple.getName()]).toEqual(3 * apple.getPrice() * (1 + cart.tva));
   });
 
   test('should reset the cart', () => {
-    const cart = new Cart();
-    const product = new Product('apple', 10.5);
-    cart.buy(product, 3);
+    const storage = new InMemoryStorage();
+    const cart = new Cart(storage);
 
+    const apple = new Product('apple', 10.5);
+    cart.buy(apple, 3);
     cart.reset();
 
-    expect(cart.items).toHaveLength(0);
+    expect(storage.getStorage()).toEqual({});
   });
 
-  test('should restore products to the cart', () => {
-    const cart = new Cart();
-    const product = new Product('apple', 10.5);
-    cart.buy(product, 3);
+  test('should restore the cart', () => {
+    const storage = new InMemoryStorage();
+    const cart = new Cart(storage);
 
-    const cart2 = new Cart();
-    cart2.restore(cart.items);
+    const apple = new Product('apple', 10.5);
+    cart.buy(apple, 3);
+    cart.restore(apple);
 
-    expect(cart2.items).toHaveLength(1);
-    expect(cart2.items[0].product).toEqual(product);
-    expect(cart2.items[0].quantity).toEqual(3);
+    expect(storage.getStorage()).not.toHaveProperty(apple.getName());
   });
 
-  test('should calculate the total price of the cart', () => {
-    const cart = new Cart();
+  test('should calculate the total price in cart', () => {
+    const storage = new InMemoryStorage();
+    const cart = new Cart(storage);
+
     const apple = new Product('apple', 10.5);
     const orange = new Product('orange', 7.5);
+
     cart.buy(apple, 3);
     cart.buy(orange, 2);
 
     const total = cart.total();
 
-    expect(total).toEqual(10.5 * 3 + 7.5 * 2);
+    expect(total).toEqual(3 * apple.getPrice() * (1 + cart.tva) + 2 * orange.getPrice() * (1 + cart.tva));
   });
 });

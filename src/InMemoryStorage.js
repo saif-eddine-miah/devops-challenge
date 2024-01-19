@@ -1,28 +1,34 @@
-const Product = require('./Product');
-
 class InMemoryStorage {
   constructor() {
-    this.data = {};
-    this.productPrices = {}; // Ajout d'un tableau pour stocker les prix des produits
+      this.storage = {};
   }
 
-  setValue(product, quantity) {
-    this.data[product.getName()] = quantity;
-    this.productPrices[product.getName()] = product.getPrice(); // Stockage du prix du produit
+  setValue(name, price) {
+      if (this.storage.hasOwnProperty(name)) {
+          this.storage[name] += price;
+      } else {
+          this.storage[name] = price;
+      }
   }
-  restore(data) {
-    this.data = data;
+
+  restore(name) {
+      if (!(name in this.storage)) {
+          throw new Error(`Product ${name} not found`);
+      }
+
+      delete this.storage[name];
   }
 
   reset() {
-    this.data = {};
+      this.storage = {};
   }
 
   total() {
-    const productKeys = Object.keys(this.data);
-    return productKeys.reduce((acc, key) => {
-      return acc + this.productPrices[key] * this.data[key];
-    }, 0);
+      return Object.values(this.storage).reduce((acc, price) => acc + price, 0);
+  }
+
+  getStorage() {
+      return this.storage;
   }
 }
 

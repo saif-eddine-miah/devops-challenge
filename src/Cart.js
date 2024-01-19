@@ -1,23 +1,30 @@
-class Cart {
-  constructor() {
-    this.items = [];
-  }
+const mysql = require('mysql2/promise');
 
-  buy(product, quantity) {
-    this.items.push({ product, quantity });
-  }
+class MySQLStorage {
+    constructor(dbConfig) {
+        this.connection = mysql.createConnection(dbConfig);
+    }
 
-  reset() {
-    this.items = [];
-  }
+    async setValue(productName, total) {
+        await this.connection.execute('INSERT INTO in_memory_storage (product_name, total) VALUES (?, ?)', [productName, total]);
+    }
 
-  restore(items) {
-    this.items = items;
-  }
+    async restore(productName) {
+        await this.connection.execute('DELETE FROM in_memory_storage WHERE product_name = ?', [productName]);
+    }
 
-  total() {
-    return this.items.reduce((acc, { product, quantity }) => acc + product.getPrice() * quantity, 0);
-  }
+    async reset() {
+        await this.connection.execute('DELETE FROM in_memory_storage');
+    }
+
+    async total() {
+        const [result] = await this.connection.query('SELECT SUM(total) as total FROM in_memory_storage');
+        return result[0].total || 0;
+    }
+
+    async close() {
+        await this.connection.end();
+    }
 }
 
-module.exports = Cart;
+module.exports = MySQLStorage;
